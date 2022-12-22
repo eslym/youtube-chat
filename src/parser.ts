@@ -261,6 +261,7 @@ function parseActionToChatItem(data: Action): ChatItem | null {
         let renderer = item.liveChatSponsorshipsGiftRedemptionAnnouncementRenderer;
         let ret = buildBaseChatItem(renderer, 'membership-redeem') as MembershipRedeemChatItem;
         ret.redeemMessage = parseMessages(renderer.message.runs);
+        return ret;
     }
 
     return null;
