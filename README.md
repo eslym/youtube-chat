@@ -8,8 +8,8 @@ This fork modified a lot of code and data structures, especially how the data be
 
 ## Getting started
 1. Install
-    - `npm i youtube-chat`
-    - `yarn add youtube-chat`
+    - `npm i @eslym/youtube-chat`
+    - `yarn add @eslym/youtube-chat`
 2. Import
     - Javascript
     ```javascript
