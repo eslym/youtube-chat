@@ -1,12 +1,10 @@
 # youtube-chat
-[![npm version](https://badge.fury.io/js/youtube-chat.svg)](https://badge.fury.io/js/youtube-chat)
-![npm](https://img.shields.io/npm/dt/youtube-chat)
-![NPM](https://img.shields.io/npm/l/youtube-chat)
-[![CI](https://github.com/LinaTsukusu/youtube-chat/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/LinaTsukusu/youtube-chat/actions/workflows/ci.yml)
-
 > Fetch YouTube live chat without API
 
 ☢ ***You will need to take full responsibility for your action*** ☢
+
+**This is a fork of https://github.com/LinaTsukusu/youtube-chat, please check it out**.
+This fork modified a lot of code and data structures, especially how the data be transformed.
 
 ## Getting started
 1. Install
@@ -72,7 +70,21 @@
 ## Types
 ### ChatItem
 ```typescript
-interface ChatItem {
+export type ChatItemTypes =
+        'message'
+        | 'superchat'
+        | 'supersticker'
+        | 'membership-join'
+        | 'membership-milestone'
+        | 'membership-gift'
+        | 'membership-redeem';
+
+/** 取得したチャット詳細 */
+interface BaseChatItem {
+   id: string
+
+   type: ChatItemTypes
+
    author: {
       name: string
       thumbnail?: ImageItem
@@ -82,18 +94,65 @@ interface ChatItem {
          label: string
       }
    }
-   message: MessageItem[]
-   superchat?: {
-      amount: string
-      color: string
-      sticker?: ImageItem
-   }
    isMembership: boolean
    isVerified: boolean
    isOwner: boolean
    isModerator: boolean
    timestamp: Date
 }
+
+export type ChatItem =
+        MessageChatItem
+        | SuperchatChatItem
+        | SuperstickerChatItem
+        | MembershipJoinChatItem
+        | MembershipMilestoneChatItem
+        | MembershipGiftChatItem
+        | MembershipRedeemChatItem;
+
+export interface MessageChatItem extends BaseChatItem {
+   type: 'message';
+   message: MessageItem[]
+}
+
+export interface SuperchatChatItem extends BaseChatItem {
+   type: 'superchat';
+   message: MessageItem[]
+   superchat: {
+      amount: string
+      color: string
+   }
+}
+
+export interface SuperstickerChatItem extends BaseChatItem {
+   type: 'supersticker';
+   superchat: {
+      amount: string
+      color: string
+      sticker: ImageItem
+   }
+}
+
+export interface MembershipJoinChatItem extends BaseChatItem {
+   type: 'membership-join';
+   joinMessage: MessageItem[];
+}
+
+export interface MembershipMilestoneChatItem extends BaseChatItem {
+   type: 'membership-milestone';
+   message: MessageItem[]
+}
+
+export interface MembershipGiftChatItem extends BaseChatItem {
+   type: 'membership-gift';
+   giftMessage: MessageItem[];
+}
+
+export interface MembershipRedeemChatItem extends BaseChatItem {
+   type: 'membership-redeem';
+   redeemMessage: MessageItem[];
+}
+
 ```
 
 ### MessageItem

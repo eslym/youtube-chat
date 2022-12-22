@@ -1,216 +1,267 @@
 import {
-  Action,
-  FetchOptions,
-  GetLiveChatResponse,
-  LiveChatMembershipItemRenderer,
-  LiveChatPaidMessageRenderer,
-  LiveChatPaidStickerRenderer,
-  LiveChatTextMessageRenderer,
-  MessageRun,
-  Thumbnail,
+    Action,
+    FetchOptions,
+    GetLiveChatResponse,
+    MessageRendererBase,
+    MessageRun,
+    Thumbnail,
 } from "./types/yt-response"
-import { ChatItem, ImageItem, MessageItem } from "./types/data"
+import {
+    ChatItem,
+    ChatItemTypes,
+    ImageItem, MembershipGiftChatItem, MembershipJoinChatItem, MembershipMilestoneChatItem, MembershipRedeemChatItem,
+    MessageChatItem,
+    MessageItem,
+    SuperchatChatItem,
+    SuperstickerChatItem
+} from "./types/data"
+import {parse} from "ts-jest";
 
 export function getOptionsFromLivePage(data: string): FetchOptions & { liveId: string } {
-  let liveId: string
-  const idResult = data.match(/<link rel="canonical" href="https:\/\/www.youtube.com\/watch\?v=(.+?)">/)
-  if (idResult) {
-    liveId = idResult[1]
-  } else {
-    throw new Error("Live Stream was not found")
-  }
+    let liveId: string
+    const idResult = data.match(/<link rel="canonical" href="https:\/\/www.youtube.com\/watch\?v=(.+?)">/)
+    if (idResult) {
+        liveId = idResult[1]
+    } else {
+        throw new Error("Live Stream was not found")
+    }
 
-  const replayResult = data.match(/['"]isReplay['"]:\s*(true)/)
-  if (replayResult) {
-    throw new Error(`${liveId} is finished live`)
-  }
+    const replayResult = data.match(/['"]isReplay['"]:\s*(true)/)
+    if (replayResult) {
+        throw new Error(`${liveId} is finished live`)
+    }
 
-  let apiKey: string
-  const keyResult = data.match(/['"]INNERTUBE_API_KEY['"]:\s*['"](.+?)['"]/)
-  if (keyResult) {
-    apiKey = keyResult[1]
-  } else {
-    throw new Error("API Key was not found")
-  }
+    let apiKey: string
+    const keyResult = data.match(/['"]INNERTUBE_API_KEY['"]:\s*['"](.+?)['"]/)
+    if (keyResult) {
+        apiKey = keyResult[1]
+    } else {
+        throw new Error("API Key was not found")
+    }
 
-  let clientVersion: string
-  const verResult = data.match(/['"]clientVersion['"]:\s*['"]([\d.]+?)['"]/)
-  if (verResult) {
-    clientVersion = verResult[1]
-  } else {
-    throw new Error("Client Version was not found")
-  }
+    let clientVersion: string
+    const verResult = data.match(/['"]clientVersion['"]:\s*['"]([\d.]+?)['"]/)
+    if (verResult) {
+        clientVersion = verResult[1]
+    } else {
+        throw new Error("Client Version was not found")
+    }
 
-  let continuation: string
-  const continuationResult = data.match(/['"]continuation['"]:\s*['"](.+?)['"]/)
-  if (continuationResult) {
-    continuation = continuationResult[1]
-  } else {
-    throw new Error("Continuation was not found")
-  }
+    let continuation: string
+    // explanation on https://github.com/LinaTsukusu/youtube-chat/issues/80#issuecomment-1361011064
+    let src = data.slice(data.indexOf('viewSelector'));
+    let regex = /[{}]/g;
+    let matches = src.matchAll(regex);
+    let open = 1;
+    let match: IteratorResult<RegExpMatchArray, undefined> = matches.next();
+    if (match.done || match.value[0] !== '{') {
+        throw new Error("Failed to extract fetch options");
+    }
+    let start = match.value.index as number;
+    let end = start;
+    match = matches.next();
+    while (!match.done && open > 0) {
+        if (match.value[0] === '{') {
+            open++;
+        } else {
+            open--;
+        }
+        end = match.value.index as number;
+        match = matches.next();
+    }
+    let vsData = parse(src.slice(start, end + 1));
 
-  return {
-    liveId,
-    apiKey,
-    clientVersion,
-    continuation,
-  }
+    try {
+        continuation = (vsData.sortFilterSubMenuRenderer.subMenuItems as any[])
+            .filter(v => !v.selected)[1].continuation.reloadContinuationData.continuation;
+    } catch (_) {
+        throw new Error("Failed to extract fetch options");
+    }
+
+    return {
+        liveId,
+        apiKey,
+        clientVersion,
+        continuation,
+    }
 }
 
 /** get_live_chat レスポンスを変換 */
 export function parseChatData(data: GetLiveChatResponse): [ChatItem[], string] {
-  let chatItems: ChatItem[] = []
-  if (data.continuationContents.liveChatContinuation.actions) {
-    chatItems = data.continuationContents.liveChatContinuation.actions
-      .map((v) => parseActionToChatItem(v))
-      .filter((v): v is NonNullable<ChatItem> => v !== null)
-  }
+    let chatItems: ChatItem[] = []
+    if (data.continuationContents.liveChatContinuation.actions) {
+        chatItems = data.continuationContents.liveChatContinuation.actions
+            .map((v) => parseActionToChatItem(v))
+            .filter((v): v is NonNullable<ChatItem> => v !== null)
+    }
 
-  const continuationData = data.continuationContents.liveChatContinuation.continuations[0]
-  let continuation = ""
-  if (continuationData.invalidationContinuationData) {
-    continuation = continuationData.invalidationContinuationData.continuation
-  } else if (continuationData.timedContinuationData) {
-    continuation = continuationData.timedContinuationData.continuation
-  }
+    const continuationData = data.continuationContents.liveChatContinuation.continuations[0]
+    let continuation = ""
+    if (continuationData.invalidationContinuationData) {
+        continuation = continuationData.invalidationContinuationData.continuation
+    } else if (continuationData.timedContinuationData) {
+        continuation = continuationData.timedContinuationData.continuation
+    }
 
-  return [chatItems, continuation]
+    return [chatItems, continuation]
 }
 
 /** サムネイルオブジェクトをImageItemへ変換 */
 function parseThumbnailToImageItem(data: Thumbnail[], alt: string): ImageItem {
-  const thumbnail = data.pop()
-  if (thumbnail) {
-    return {
-      url: thumbnail.url,
-      alt: alt,
+    const thumbnail = data.pop()
+    if (thumbnail) {
+        return {
+            url: thumbnail.url,
+            alt: alt,
+        }
+    } else {
+        return {
+            url: "",
+            alt: "",
+        }
     }
-  } else {
-    return {
-      url: "",
-      alt: "",
-    }
-  }
 }
 
 function convertColorToHex6(colorNum: number) {
-  return `#${colorNum.toString(16).slice(2).toLocaleUpperCase()}`
+    return `#${colorNum.toString(16).padStart(6, '0').slice(2).toLocaleUpperCase()}`
 }
 
 /** メッセージrun配列をMessageItem配列へ変換 */
 function parseMessages(runs: MessageRun[]): MessageItem[] {
-  return runs.map((run: MessageRun): MessageItem => {
-    if ("text" in run) {
-      return run
-    } else {
-      // Emoji
-      const thumbnail = run.emoji.image.thumbnails.shift()
-      const isCustomEmoji = Boolean(run.emoji.isCustomEmoji)
-      const shortcut = run.emoji.shortcuts ? run.emoji.shortcuts[0] : ""
-      return {
-        url: thumbnail ? thumbnail.url : "",
-        alt: shortcut,
-        isCustomEmoji: isCustomEmoji,
-        emojiText: isCustomEmoji ? shortcut : run.emoji.emojiId,
-      }
-    }
-  })
+    return runs.map((run: MessageRun): MessageItem => {
+        if ("text" in run) {
+            return run
+        } else {
+            // Emoji
+            const thumbnail = run.emoji.image.thumbnails.shift()
+            const isCustomEmoji = Boolean(run.emoji.isCustomEmoji)
+            const shortcut = run.emoji.shortcuts ? run.emoji.shortcuts[0] : ""
+            return {
+                url: thumbnail ? thumbnail.url : "",
+                alt: shortcut,
+                isCustomEmoji: isCustomEmoji,
+                emojiText: isCustomEmoji ? shortcut : run.emoji.emojiId,
+            }
+        }
+    })
 }
 
-/** actionの種類を判別してRendererを返す */
-function rendererFromAction(
-  action: Action
-):
-  | LiveChatTextMessageRenderer
-  | LiveChatPaidMessageRenderer
-  | LiveChatPaidStickerRenderer
-  | LiveChatMembershipItemRenderer
-  | null {
-  if (!action.addChatItemAction) {
-    return null
-  }
-  const item = action.addChatItemAction.item
-  if (item.liveChatTextMessageRenderer) {
-    return item.liveChatTextMessageRenderer
-  } else if (item.liveChatPaidMessageRenderer) {
-    return item.liveChatPaidMessageRenderer
-  } else if (item.liveChatPaidStickerRenderer) {
-    return item.liveChatPaidStickerRenderer
-  } else if (item.liveChatMembershipItemRenderer) {
-    return item.liveChatMembershipItemRenderer
-  }
-  return null
+function buildBaseChatItem(messageRenderer: MessageRendererBase, type: ChatItemTypes) {
+    const authorNameText = messageRenderer.authorName?.simpleText ?? ""
+    const ret: any = {
+        type,
+        id: messageRenderer.id,
+        author: {
+            name: authorNameText,
+            thumbnail: parseThumbnailToImageItem(messageRenderer.authorPhoto.thumbnails, authorNameText),
+            channelId: messageRenderer.authorExternalChannelId,
+        },
+        isMembership: false,
+        isOwner: false,
+        isVerified: false,
+        isModerator: false,
+        timestamp: new Date(Number(messageRenderer.timestampUsec) / 1000),
+    }
+
+    if (messageRenderer.authorBadges) {
+        for (const entry of messageRenderer.authorBadges) {
+            const badge = entry.liveChatAuthorBadgeRenderer
+            if (badge.customThumbnail) {
+                ret.author.badge = {
+                    thumbnail: parseThumbnailToImageItem(badge.customThumbnail.thumbnails, badge.tooltip),
+                    label: badge.tooltip,
+                }
+                ret.isMembership = true
+            } else {
+                switch (badge.icon?.iconType) {
+                    case "OWNER":
+                        ret.isOwner = true
+                        break
+                    case "VERIFIED":
+                        ret.isVerified = true
+                        break
+                    case "MODERATOR":
+                        ret.isModerator = true
+                        break
+                }
+            }
+        }
+    }
+
+    return ret
 }
 
 /** an action to a ChatItem */
 function parseActionToChatItem(data: Action): ChatItem | null {
-  const messageRenderer = rendererFromAction(data)
-  if (messageRenderer === null) {
-    return null
-  }
-  let message: MessageRun[] = []
-  if ("message" in messageRenderer) {
-    message = messageRenderer.message.runs
-  } else if ("headerSubtext" in messageRenderer) {
-    message = messageRenderer.headerSubtext.runs
-  }
+    if (!data.addChatItemAction) {
+        return null
+    }
+    const item = data.addChatItemAction.item;
 
-  const authorNameText = messageRenderer.authorName?.simpleText ?? ""
-  const ret: ChatItem = {
-    id: messageRenderer.id,
-    author: {
-      name: authorNameText,
-      thumbnail: parseThumbnailToImageItem(messageRenderer.authorPhoto.thumbnails, authorNameText),
-      channelId: messageRenderer.authorExternalChannelId,
-    },
-    message: parseMessages(message),
-    isMembership: false,
-    isOwner: false,
-    isVerified: false,
-    isModerator: false,
-    timestamp: new Date(Number(messageRenderer.timestampUsec) / 1000),
-  }
+    if (item.liveChatTextMessageRenderer) {
+        let renderer = item.liveChatTextMessageRenderer;
+        let ret = buildBaseChatItem(renderer, 'message') as MessageChatItem;
+        ret.message = parseMessages(renderer.message.runs);
+        return ret;
+    }
 
-  if (messageRenderer.authorBadges) {
-    for (const entry of messageRenderer.authorBadges) {
-      const badge = entry.liveChatAuthorBadgeRenderer
-      if (badge.customThumbnail) {
-        ret.author.badge = {
-          thumbnail: parseThumbnailToImageItem(badge.customThumbnail.thumbnails, badge.tooltip),
-          label: badge.tooltip,
+    if (item.liveChatPaidMessageRenderer) {
+        let renderer = item.liveChatPaidMessageRenderer
+        let ret = buildBaseChatItem(renderer, 'superchat') as SuperchatChatItem;
+        ret.message = parseMessages(renderer.message.runs);
+
+        ret.superchat = {
+            amount: renderer.purchaseAmountText.simpleText,
+            color: convertColorToHex6(renderer.bodyBackgroundColor),
         }
-        ret.isMembership = true
-      } else {
-        switch (badge.icon?.iconType) {
-          case "OWNER":
-            ret.isOwner = true
-            break
-          case "VERIFIED":
-            ret.isVerified = true
-            break
-          case "MODERATOR":
-            ret.isModerator = true
-            break
+
+        return ret;
+    }
+
+    if (item.liveChatPaidStickerRenderer) {
+        let renderer = item.liveChatPaidStickerRenderer;
+        let ret = buildBaseChatItem(renderer, 'superchat') as SuperstickerChatItem;
+
+        ret.superchat = {
+            amount: renderer.purchaseAmountText.simpleText,
+            color: convertColorToHex6(renderer.backgroundColor),
+            sticker: parseThumbnailToImageItem(
+                renderer.sticker.thumbnails,
+                renderer.sticker.accessibility.accessibilityData.label
+            )
         }
-      }
-    }
-  }
 
-  if ("sticker" in messageRenderer) {
-    ret.superchat = {
-      amount: messageRenderer.purchaseAmountText.simpleText,
-      color: convertColorToHex6(messageRenderer.backgroundColor),
-      sticker: parseThumbnailToImageItem(
-        messageRenderer.sticker.thumbnails,
-        messageRenderer.sticker.accessibility.accessibilityData.label
-      ),
+        return ret;
     }
-  } else if ("purchaseAmountText" in messageRenderer) {
-    ret.superchat = {
-      amount: messageRenderer.purchaseAmountText.simpleText,
-      color: convertColorToHex6(messageRenderer.bodyBackgroundColor),
-    }
-  }
 
-  return ret
+    if (item.liveChatMembershipItemRenderer) {
+        let renderer = item.liveChatMembershipItemRenderer;
+        if (renderer.message) {
+            let ret = buildBaseChatItem(renderer, 'membership-milestone') as MembershipMilestoneChatItem;
+            ret.message = ret.message = parseMessages(renderer.message.runs);
+            return ret;
+        } else {
+            let ret = buildBaseChatItem(renderer, 'membership-join') as MembershipJoinChatItem;
+            ret.joinMessage = parseMessages(renderer.headerSubtext.runs);
+            return ret;
+        }
+    }
+
+    if (item.liveChatSponsorshipsGiftPurchaseAnnouncementRenderer) {
+        let renderer = {
+            ...item.liveChatSponsorshipsGiftPurchaseAnnouncementRenderer.header.liveChatSponsorshipsHeaderRenderer,
+            ...item.liveChatSponsorshipsGiftPurchaseAnnouncementRenderer
+        };
+        let ret = buildBaseChatItem(renderer, 'membership-gift') as MembershipGiftChatItem;
+        ret.giftMessage = parseMessages(renderer.primaryText.runs);
+        return ret;
+    }
+
+    if (item.liveChatSponsorshipsGiftRedemptionAnnouncementRenderer) {
+        let renderer = item.liveChatSponsorshipsGiftRedemptionAnnouncementRenderer;
+        let ret = buildBaseChatItem(renderer, 'membership-redeem') as MembershipRedeemChatItem;
+        ret.redeemMessage = parseMessages(renderer.message.runs);
+    }
+
+    return null;
 }
