@@ -69,11 +69,11 @@ export function getOptionsFromLivePage(data: string): FetchOptions & { liveId: s
         end = match.value.index as number;
         match = matches.next();
     }
-    let vsData = parse(src.slice(start, end + 1));
 
     try {
+        let vsData = parse(src.slice(start, end + 1));
         continuation = (vsData.sortFilterSubMenuRenderer.subMenuItems as any[])
-            .filter(v => !v.selected)[1].continuation.reloadContinuationData.continuation;
+            .filter(v => !v.selected)[0].continuation.reloadContinuationData.continuation;
     } catch (_) {
         throw new Error("Failed to extract fetch options");
     }
