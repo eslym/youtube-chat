@@ -15,7 +15,7 @@ import {
     SuperchatChatItem,
     SuperstickerChatItem
 } from "./types/data"
-import {parse} from "ts-jest";
+import {parse} from "json5";
 
 export function getOptionsFromLivePage(data: string): FetchOptions & { liveId: string } {
     let liveId: string
