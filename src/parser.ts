@@ -238,7 +238,8 @@ function parseActionToChatItem(data: Action): ChatItem | null {
         let renderer = item.liveChatMembershipItemRenderer;
         if (renderer.message) {
             let ret = buildBaseChatItem(renderer, 'membership-milestone') as MembershipMilestoneChatItem;
-            ret.message = ret.message = parseMessages(renderer.message.runs);
+            ret.message = parseMessages(renderer.message.runs);
+            ret.milestoneMessage = parseMessages(renderer.headerPrimaryText.runs);
             return ret;
         } else {
             let ret = buildBaseChatItem(renderer, 'membership-join') as MembershipJoinChatItem;

@@ -79,7 +79,6 @@ export type ChatItemTypes =
         | 'membership-gift'
         | 'membership-redeem';
 
-/** 取得したチャット詳細 */
 interface BaseChatItem {
    id: string
 
@@ -140,7 +139,8 @@ export interface MembershipJoinChatItem extends BaseChatItem {
 
 export interface MembershipMilestoneChatItem extends BaseChatItem {
    type: 'membership-milestone';
-   message: MessageItem[]
+   message: MessageItem[];
+   milestoneMessage: MessageItem[];
 }
 
 export interface MembershipGiftChatItem extends BaseChatItem {

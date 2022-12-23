@@ -70,7 +70,8 @@ export interface MembershipJoinChatItem extends BaseChatItem {
 
 export interface MembershipMilestoneChatItem extends BaseChatItem {
     type: 'membership-milestone';
-    message: MessageItem[]
+    message: MessageItem[];
+    milestoneMessage: MessageItem[];
 }
 
 export interface MembershipGiftChatItem extends BaseChatItem {

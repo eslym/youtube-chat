@@ -154,6 +154,9 @@ export interface LiveChatMembershipItemRenderer extends MessageRendererBase {
     headerSubtext: {
         runs: MessageRun[]
     }
+    headerPrimaryText: {
+        runs: MessageRun[]
+    }
     authorBadges: AuthorBadge[]
 
     message?: {
