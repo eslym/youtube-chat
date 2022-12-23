@@ -5,7 +5,7 @@ import {FetchOptions} from "./types/yt-response"
 import {fetchChat, fetchLivePage} from "./requests"
 
 type LiveChatEvents = {
-    start: (liveId: string) => void
+    start: (liveId: string, title: string) => void
     end: (reason?: string) => void
     chat: (chatItem: ChatItem) => void
     error: (err: Error | unknown) => void
@@ -44,7 +44,7 @@ export class LiveChat extends (EventEmitter as new () => TypedEmitter<LiveChatEv
 
             this.#observer = setInterval(() => this.#execute(), this.#interval)
 
-            this.emit("start", this.liveId)
+            this.emit("start", this.liveId, options.title);
             return true
         } catch (err) {
             this.emit("error", err)
