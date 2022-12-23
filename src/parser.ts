@@ -217,7 +217,7 @@ function parseActionToChatItem(data: Action): ChatItem | null {
     if (item.liveChatPaidMessageRenderer) {
         let renderer = item.liveChatPaidMessageRenderer
         let ret = buildBaseChatItem(renderer, 'superchat') as SuperchatChatItem;
-        ret.message = parseMessages(renderer.message.runs);
+        ret.message = parseMessages(renderer.message?.runs ?? []);
 
         ret.superchat = {
             amount: renderer.purchaseAmountText.simpleText,
