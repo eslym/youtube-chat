@@ -207,71 +207,77 @@ function parseActionToChatItem(data: Action): ChatItem | null {
     }
     const item = data.addChatItemAction.item;
 
-    if (item.liveChatTextMessageRenderer) {
-        let renderer = item.liveChatTextMessageRenderer;
-        let ret = buildBaseChatItem(renderer, 'message') as MessageChatItem;
-        ret.message = parseMessages(renderer.message.runs);
-        return ret;
-    }
+    try {
 
-    if (item.liveChatPaidMessageRenderer) {
-        let renderer = item.liveChatPaidMessageRenderer
-        let ret = buildBaseChatItem(renderer, 'superchat') as SuperchatChatItem;
-        ret.message = parseMessages(renderer.message?.runs ?? []);
-
-        ret.superchat = {
-            amount: renderer.purchaseAmountText.simpleText,
-            color: convertColorToHex6(renderer.bodyBackgroundColor),
-        }
-
-        return ret;
-    }
-
-    if (item.liveChatPaidStickerRenderer) {
-        let renderer = item.liveChatPaidStickerRenderer;
-        let ret = buildBaseChatItem(renderer, 'superchat') as SuperstickerChatItem;
-
-        ret.superchat = {
-            amount: renderer.purchaseAmountText.simpleText,
-            color: convertColorToHex6(renderer.backgroundColor),
-            sticker: parseThumbnailToImageItem(
-                renderer.sticker.thumbnails,
-                renderer.sticker.accessibility.accessibilityData.label
-            )
-        }
-
-        return ret;
-    }
-
-    if (item.liveChatMembershipItemRenderer) {
-        let renderer = item.liveChatMembershipItemRenderer;
-        if (renderer.message) {
-            let ret = buildBaseChatItem(renderer, 'membership-milestone') as MembershipMilestoneChatItem;
+        if (item.liveChatTextMessageRenderer) {
+            let renderer = item.liveChatTextMessageRenderer;
+            let ret = buildBaseChatItem(renderer, 'message') as MessageChatItem;
             ret.message = parseMessages(renderer.message.runs);
-            ret.milestoneMessage = parseMessages(renderer.headerPrimaryText.runs);
-            return ret;
-        } else {
-            let ret = buildBaseChatItem(renderer, 'membership-join') as MembershipJoinChatItem;
-            ret.joinMessage = parseMessages(renderer.headerSubtext.runs);
             return ret;
         }
-    }
 
-    if (item.liveChatSponsorshipsGiftPurchaseAnnouncementRenderer) {
-        let renderer = {
-            ...item.liveChatSponsorshipsGiftPurchaseAnnouncementRenderer.header.liveChatSponsorshipsHeaderRenderer,
-            ...item.liveChatSponsorshipsGiftPurchaseAnnouncementRenderer
-        };
-        let ret = buildBaseChatItem(renderer, 'membership-gift') as MembershipGiftChatItem;
-        ret.giftMessage = parseMessages(renderer.primaryText.runs);
-        return ret;
-    }
+        if (item.liveChatPaidMessageRenderer) {
+            let renderer = item.liveChatPaidMessageRenderer
+            let ret = buildBaseChatItem(renderer, 'superchat') as SuperchatChatItem;
+            ret.message = parseMessages(renderer.message?.runs ?? []);
 
-    if (item.liveChatSponsorshipsGiftRedemptionAnnouncementRenderer) {
-        let renderer = item.liveChatSponsorshipsGiftRedemptionAnnouncementRenderer;
-        let ret = buildBaseChatItem(renderer, 'membership-redeem') as MembershipRedeemChatItem;
-        ret.redeemMessage = parseMessages(renderer.message.runs);
-        return ret;
+            ret.superchat = {
+                amount: renderer.purchaseAmountText.simpleText,
+                color: convertColorToHex6(renderer.bodyBackgroundColor),
+            }
+
+            return ret;
+        }
+
+        if (item.liveChatPaidStickerRenderer) {
+            let renderer = item.liveChatPaidStickerRenderer;
+            let ret = buildBaseChatItem(renderer, 'superchat') as SuperstickerChatItem;
+
+            ret.superchat = {
+                amount: renderer.purchaseAmountText.simpleText,
+                color: convertColorToHex6(renderer.backgroundColor),
+                sticker: parseThumbnailToImageItem(
+                    renderer.sticker.thumbnails,
+                    renderer.sticker.accessibility.accessibilityData.label
+                )
+            }
+
+            return ret;
+        }
+
+        if (item.liveChatMembershipItemRenderer) {
+            let renderer = item.liveChatMembershipItemRenderer;
+            if (renderer.message) {
+                let ret = buildBaseChatItem(renderer, 'membership-milestone') as MembershipMilestoneChatItem;
+                ret.message = parseMessages(renderer.message.runs);
+                ret.milestoneMessage = parseMessages(renderer.headerPrimaryText.runs);
+                return ret;
+            } else {
+                let ret = buildBaseChatItem(renderer, 'membership-join') as MembershipJoinChatItem;
+                ret.joinMessage = parseMessages(renderer.headerSubtext.runs);
+                return ret;
+            }
+        }
+
+        if (item.liveChatSponsorshipsGiftPurchaseAnnouncementRenderer) {
+            let renderer = {
+                ...item.liveChatSponsorshipsGiftPurchaseAnnouncementRenderer.header.liveChatSponsorshipsHeaderRenderer,
+                ...item.liveChatSponsorshipsGiftPurchaseAnnouncementRenderer
+            };
+            let ret = buildBaseChatItem(renderer, 'membership-gift') as MembershipGiftChatItem;
+            ret.giftMessage = parseMessages(renderer.primaryText.runs);
+            return ret;
+        }
+
+        if (item.liveChatSponsorshipsGiftRedemptionAnnouncementRenderer) {
+            let renderer = item.liveChatSponsorshipsGiftRedemptionAnnouncementRenderer;
+            let ret = buildBaseChatItem(renderer, 'membership-redeem') as MembershipRedeemChatItem;
+            ret.redeemMessage = parseMessages(renderer.message.runs);
+            return ret;
+        }
+
+    } catch (e) {
+        throw new Error("Error while processing " + JSON.stringify(item));
     }
 
     return null;
