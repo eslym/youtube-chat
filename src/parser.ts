@@ -231,7 +231,7 @@ function parseActionToChatItem(data: Action): ChatItem | null {
 
         if (item.liveChatPaidStickerRenderer) {
             let renderer = item.liveChatPaidStickerRenderer;
-            let ret = buildBaseChatItem(renderer, 'superchat') as SuperstickerChatItem;
+            let ret = buildBaseChatItem(renderer, 'supersticker') as SuperstickerChatItem;
 
             ret.superchat = {
                 amount: renderer.purchaseAmountText.simpleText,
