@@ -26,7 +26,7 @@ export function getOptionsFromLivePage(data: string): FetchOptions & { liveId: s
         throw new Error("Live Stream was not found")
     }
 
-    const titleResult = data.match(/<title>(.+?) - Youtube<\/title>/);
+    const titleResult = data.match(/<title>(.+?) - YouTube<\/title>/);
     let title: string;
     if (titleResult) {
         title = titleResult[1];
