@@ -56,9 +56,9 @@ export class LiveChat extends (EventEmitter as new () => TypedEmitter<LiveChatEv
 
     stop(reason?: string) {
         if (this.#observer) {
-            clearInterval(this.#observer)
-            this.#observer = undefined
-            this.emit("end", reason)
+            clearTimeout(this.#observer);
+            this.#observer = undefined;
+            this.emit("end", reason);
         }
     }
 
