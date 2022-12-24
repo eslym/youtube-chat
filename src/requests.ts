@@ -1,16 +1,20 @@
 import {parseChatData, getOptionsFromLivePage} from "./parser"
 import {FetchOptions} from "./types/yt-response"
 import {ChatItem, YoutubeId} from "./types/data"
-import {Axios} from "axios";
+import axios from "axios";
 
-const axios = new Axios();
-
-axios.defaults.headers.common["Accept-Encoding"] = "utf-8"
-axios.defaults.timeout = 5000;
+const client = axios.create({
+    headers: {
+        common: {
+            'Accept-Encoding': 'utf-8'
+        }
+    },
+    timeout: 5000
+});
 
 export async function fetchChat(options: FetchOptions): Promise<[ChatItem[], string]> {
     const url = `https://www.youtube.com/youtubei/v1/live_chat/get_live_chat?key=${options.apiKey}`
-    const res = await axios.post(url, {
+    const res = await client.post(url, {
         context: {
             client: {
                 clientVersion: options.clientVersion,
@@ -28,7 +32,7 @@ export async function fetchLivePage(id: { channelId: string } | { liveId: string
     if (!url) {
         throw TypeError("not found id")
     }
-    const res = await axios.get(url)
+    const res = await client.get(url)
     return getOptionsFromLivePage(res.data.toString())
 }
 
