@@ -87,7 +87,7 @@ export class LiveChat extends (EventEmitter as new () => TypedEmitter<LiveChatEv
                 return;
             }
 
-            this.emit("error", err);
+            setTimeout(() => this.emit("error", err));
         }
 
         this.#observer = setTimeout(() => this.#execute(), this.#interval)

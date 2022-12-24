@@ -100,7 +100,7 @@ export function getOptionsFromLivePage(data: string): FetchOptions & { liveId: s
 export function parseChatData(data: GetLiveChatResponse): [ChatItem[], string] {
     let chatItems: ChatItem[] = []
 
-    if (!data.continuationContents.liveChatContinuation) {
+    if (!data.continuationContents?.liveChatContinuation) {
         throw ChatEndedError;
     }
 
