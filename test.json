@@ -1,0 +1,71 @@
+{
+  "liveChatMembershipItemRenderer": {
+    "id": "Ci8KLUNJekw1ZHZHalB3Q0ZVUWZaQW9kTXlvRkRBLUxveU1lc0lELTMzNDM2ODkwNA%3D%3D",
+    "timestampUsec": "1671844520723465",
+    "authorExternalChannelId": "UCc09Vt0-xfGbM4rHrvkJMFg",
+    "headerPrimaryText": {
+      "runs": [
+        {
+          "text": "Member for "
+        },
+        {
+          "text": "6"
+        },
+        {
+          "text": " months"
+        }
+      ]
+    },
+    "empty": true,
+    "authorName": {
+      "simpleText": "とぅめ"
+    },
+    "authorPhoto": {
+      "thumbnails": [
+        {
+          "url": "https://yt4.ggpht.com/btQSR1Igx7fNHW1rG2cCnrh1dOxC9sFaY7s_JuNJmpTdhdPm7C7FsjKel80_CLanW0V4Ble-=s32-c-k-c0x00ffffff-no-rj",
+          "width": 32,
+          "height": 32
+        }
+      ]
+    },
+    "authorBadges": [
+      {
+        "liveChatAuthorBadgeRenderer": {
+          "customThumbnail": {
+            "thumbnails": [
+              {
+                "url": "https://yt3.ggpht.com/VPx_oE5UOAMimypJaVFgvo-dIoWWjx1VFXv2L3wytQO2qplLcQTXUT5r3gas5ImFSSGSs6I2bA=s16-c-k",
+                "width": 16,
+                "height": 16
+              }
+            ]
+          },
+          "tooltip": "Member (6 months)",
+          "accessibility": {
+            "accessibilityData": {
+              "label": "Member (6 months)"
+            }
+          }
+        }
+      }
+    ],
+    "contextMenuEndpoint": {
+      "clickTrackingParams": "CAUQ4f0GIhMIlfixl4qR_AIVcNpzAR09igE0",
+      "commandMetadata": {
+        "webCommandMetadata": {
+          "ignoreNavigation": true
+        }
+      },
+      "liveChatItemContextMenuEndpoint": {
+        "params": "Q2pFS0x3b3RRMGw2VERWa2RrZHFVSGREUmxWUlpscEJiMlJOZVc5R1JFRXRURzk1VFdWelNVUXRNek0wTXpZNE9UQTBHaWtxSndvWVZVTjJla2RzVURsdlVYZFZMUzFaTUhJNWFXUmZhbTVCRWd0VmJUbElWM05PY2paUmF5QUJLQUV5R2dvWVZVTmpNRGxXZERBdGVHWkhZazAwY2toeWRtdEtUVVpuT0FKSUFGQVg="
+      }
+    },
+    "contextMenuAccessibility": {
+      "accessibilityData": {
+        "label": "Chat actions"
+      }
+    },
+    "trackingParams": "CAUQ4f0GIhMIlfixl4qR_AIVcNpzAR09igE0"
+  }
+}

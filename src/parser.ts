@@ -155,7 +155,17 @@ function parseMessages(runs: MessageRun[]): MessageItem[] {
     })
 }
 
-function buildBaseChatItem(messageRenderer: MessageRendererBase, type: ChatItemTypes) {
+type TYPE_MAP = {
+    message: MessageChatItem;
+    superchat: SuperchatChatItem;
+    supersticker: SuperstickerChatItem;
+    'membership-join': MembershipJoinChatItem;
+    'membership-gift': MembershipGiftChatItem;
+    'membership-milestone': MembershipMilestoneChatItem;
+    'membership-redeem': MembershipRedeemChatItem;
+};
+
+function buildBaseChatItem<T extends ChatItemTypes>(messageRenderer: MessageRendererBase, type: T): TYPE_MAP[T] {
     const authorNameText = messageRenderer.authorName?.simpleText ?? ""
     const ret: any = {
         type,
@@ -231,7 +241,7 @@ function parseActionToChatItem(data: Action): ChatItem | null {
 
         if (item.liveChatPaidStickerRenderer) {
             let renderer = item.liveChatPaidStickerRenderer;
-            let ret = buildBaseChatItem(renderer, 'supersticker') as SuperstickerChatItem;
+            let ret = buildBaseChatItem(renderer, 'supersticker');
 
             ret.superchat = {
                 amount: renderer.purchaseAmountText.simpleText,
@@ -247,13 +257,13 @@ function parseActionToChatItem(data: Action): ChatItem | null {
 
         if (item.liveChatMembershipItemRenderer) {
             let renderer = item.liveChatMembershipItemRenderer;
-            if (renderer.message) {
-                let ret = buildBaseChatItem(renderer, 'membership-milestone') as MembershipMilestoneChatItem;
-                ret.message = parseMessages(renderer.message.runs);
+            if (renderer.headerPrimaryText) {
+                let ret = buildBaseChatItem(renderer, 'membership-milestone');
+                ret.message = parseMessages(renderer.message?.runs ?? []);
                 ret.milestoneMessage = parseMessages(renderer.headerPrimaryText.runs);
                 return ret;
             } else {
-                let ret = buildBaseChatItem(renderer, 'membership-join') as MembershipJoinChatItem;
+                let ret = buildBaseChatItem(renderer, 'membership-join');
                 ret.joinMessage = parseMessages(renderer.headerSubtext.runs);
                 return ret;
             }
@@ -264,14 +274,14 @@ function parseActionToChatItem(data: Action): ChatItem | null {
                 ...item.liveChatSponsorshipsGiftPurchaseAnnouncementRenderer.header.liveChatSponsorshipsHeaderRenderer,
                 ...item.liveChatSponsorshipsGiftPurchaseAnnouncementRenderer
             };
-            let ret = buildBaseChatItem(renderer, 'membership-gift') as MembershipGiftChatItem;
+            let ret = buildBaseChatItem(renderer, 'membership-gift');
             ret.giftMessage = parseMessages(renderer.primaryText.runs);
             return ret;
         }
 
         if (item.liveChatSponsorshipsGiftRedemptionAnnouncementRenderer) {
             let renderer = item.liveChatSponsorshipsGiftRedemptionAnnouncementRenderer;
-            let ret = buildBaseChatItem(renderer, 'membership-redeem') as MembershipRedeemChatItem;
+            let ret = buildBaseChatItem(renderer, 'membership-redeem');
             ret.redeemMessage = parseMessages(renderer.message.runs);
             return ret;
         }
