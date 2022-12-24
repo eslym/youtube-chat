@@ -1,7 +1,7 @@
 {
   "name": "@eslym/youtube-chat",
   "description": "A fork of https://github.com/LinaTsukusu/youtube-chat",
-  "version": "2.2.10",
+  "version": "2.2.11",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "repository": "https://github.com/eslym/youtube-chat.git",

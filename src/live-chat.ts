@@ -3,6 +3,7 @@ import TypedEmitter from "typed-emitter"
 import {ChatItem, YoutubeId} from "./types/data"
 import {FetchOptions} from "./types/yt-response"
 import {fetchChat, fetchLivePage} from "./requests"
+import {AxiosError} from "axios";
 
 type LiveChatEvents = {
     start: (liveId: string, title: string) => void
@@ -18,6 +19,7 @@ export class LiveChat extends (EventEmitter as new () => TypedEmitter<LiveChatEv
     liveId?: string
     #observer?: NodeJS.Timer
     #options?: FetchOptions
+    #retry = 0;
     readonly #interval: number = 1000
     readonly #id: YoutubeId
 
@@ -42,7 +44,7 @@ export class LiveChat extends (EventEmitter as new () => TypedEmitter<LiveChatEv
             this.liveId = options.liveId
             this.#options = options
 
-            this.#observer = setInterval(() => this.#execute(), this.#interval)
+            this.#observer = setTimeout(() => this.#execute(), this.#interval)
 
             this.emit("start", this.liveId, options.title);
             return true
@@ -71,10 +73,25 @@ export class LiveChat extends (EventEmitter as new () => TypedEmitter<LiveChatEv
         try {
             const [chatItems, continuation] = await fetchChat(this.#options)
             chatItems.forEach((chatItem) => this.emit("chat", chatItem))
-
+            this.#retry = 0;
             this.#options.continuation = continuation
-        } catch (err) {
-            this.emit("error", err)
+        } catch (err: any) {
+            if (err === ChatEndedError) {
+                this.stop('Chat ended.');
+                return;
+            }
+
+            if ((('code' in err && err.code === 'ECONNABORTED') || (err instanceof AxiosError && err.response?.status === 503)) && this.#retry < 5) {
+                this.#retry++;
+                this.#observer = setTimeout(() => this.#execute(), this.#interval * this.#retry);
+                return;
+            }
+
+            this.emit("error", err);
         }
+
+        this.#observer = setTimeout(() => this.#execute(), this.#interval)
     }
 }
+
+export const ChatEndedError = Symbol("chat ended");

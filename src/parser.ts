@@ -16,6 +16,7 @@ import {
     SuperstickerChatItem
 } from "./types/data"
 import {parse} from "json5";
+import {ChatEndedError} from "./live-chat";
 
 export function getOptionsFromLivePage(data: string): FetchOptions & { liveId: string, title: string } {
     let liveId: string
@@ -98,6 +99,11 @@ export function getOptionsFromLivePage(data: string): FetchOptions & { liveId: s
 /** get_live_chat レスポンスを変換 */
 export function parseChatData(data: GetLiveChatResponse): [ChatItem[], string] {
     let chatItems: ChatItem[] = []
+
+    if (!data.continuationContents.liveChatContinuation) {
+        throw ChatEndedError;
+    }
+
     if (data.continuationContents.liveChatContinuation.actions) {
         chatItems = data.continuationContents.liveChatContinuation.actions
             .map((v) => parseActionToChatItem(v))
