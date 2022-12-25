@@ -23,13 +23,13 @@ const VideoDetailsSchema = z.object({
     videoId: z.string(),
     title: z.string(),
     lengthSeconds: z.string(),
-    isLive: z.boolean(),
-    keywords: z.array(z.string()),
+    isLive: z.boolean().optional(),
+    keywords: z.array(z.string()).optional(),
     channelId: z.string(),
     isOwnerViewing: z.boolean(),
     shortDescription: z.string(),
     isCrawlable: z.boolean(),
-    isLiveDvrEnabled: z.boolean(),
+    isLiveDvrEnabled: z.boolean().optional(),
     thumbnail: z.object({
         thumbnails: z.array(
             z.object({
@@ -39,7 +39,7 @@ const VideoDetailsSchema = z.object({
             }),
         ),
     }),
-    liveChunkReadahead: z.number(),
+    liveChunkReadahead: z.number().optional(),
     allowRatings: z.boolean(),
     viewCount: z.string(),
     author: z.string(),

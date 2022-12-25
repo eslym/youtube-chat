@@ -200,17 +200,17 @@ export interface VideoDetails {
     videoId: string;
     title: string;
     lengthSeconds: string;
-    isLive: boolean;
-    keywords: string[];
+    isLive?: boolean;
+    keywords?: string[];
     channelId: string;
     isOwnerViewing: boolean;
     shortDescription: string;
     isCrawlable: boolean;
-    isLiveDvrEnabled: boolean;
+    isLiveDvrEnabled?: boolean;
     thumbnail: {
         thumbnails: Thumbnail[];
     };
-    liveChunkReadahead: number;
+    liveChunkReadahead?: number;
     allowRatings: boolean;
     viewCount: string;
     author: string;
