@@ -4,7 +4,7 @@ import {
     GetLiveChatResponse,
     MessageRendererBase,
     MessageRun,
-    Thumbnail,
+    Thumbnail, VideoDetails,
 } from "./types/yt-response"
 import {
     ChatItem,
@@ -17,8 +17,40 @@ import {
 } from "./types/data"
 import {parse} from "json5";
 import {ChatEndedError} from "./live-chat";
+import {z} from "zod";
 
-export function getOptionsFromLivePage(data: string): FetchOptions & { liveId: string, title: string } {
+const VideoDetailsSchema = z.object({
+    videoId: z.string(),
+    title: z.string(),
+    lengthSeconds: z.string(),
+    isLive: z.boolean(),
+    keywords: z.array(z.string()),
+    channelId: z.string(),
+    isOwnerViewing: z.boolean(),
+    shortDescription: z.string(),
+    isCrawlable: z.boolean(),
+    isLiveDvrEnabled: z.boolean(),
+    thumbnail: z.object({
+        thumbnails: z.array(
+            z.object({
+                url: z.string(),
+                width: z.number().optional(),
+                height: z.number().optional(),
+            }),
+        ),
+    }),
+    liveChunkReadahead: z.number(),
+    allowRatings: z.boolean(),
+    viewCount: z.string(),
+    author: z.string(),
+    isLowLatencyLiveStream: z.boolean(),
+    isPrivate: z.boolean(),
+    isUnpluggedCorpus: z.boolean(),
+    latencyClass: z.string(),
+    isLiveContent: z.boolean(),
+});
+
+export function getOptionsFromLivePage(data: string): FetchOptions & { liveId: string, details?: VideoDetails } {
     let liveId: string
     const idResult = data.match(/<link rel="canonical" href="https:\/\/www.youtube.com\/watch\?v=(.+?)">/)
     if (idResult) {
@@ -27,13 +59,7 @@ export function getOptionsFromLivePage(data: string): FetchOptions & { liveId: s
         throw new Error("Live Stream was not found")
     }
 
-    const titleResult = data.match(/<title>(.+?) - YouTube<\/title>/);
-    let title: string;
-    if (titleResult) {
-        title = titleResult[1];
-    } else {
-        title = 'Unknown Stream';
-    }
+    const details = extractVideoDetails(data);
 
     const replayResult = data.match(/['"]isReplay['"]:\s*(true)/)
     if (replayResult) {
@@ -57,30 +83,10 @@ export function getOptionsFromLivePage(data: string): FetchOptions & { liveId: s
     }
 
     let continuation: string
-    // explanation on https://github.com/LinaTsukusu/youtube-chat/issues/80#issuecomment-1361011064
-    let src = data.slice(data.indexOf('viewSelector'));
-    let regex = /[{}]/g;
-    let matches = src.matchAll(regex);
-    let open = 1;
-    let match: IteratorResult<RegExpMatchArray, undefined> = matches.next();
-    if (match.done || match.value[0] !== '{') {
-        throw new Error("Failed to extract fetch options");
-    }
-    let start = match.value.index as number;
-    let end = start;
-    match = matches.next();
-    while (!match.done && open > 0) {
-        if (match.value[0] === '{') {
-            open++;
-        } else {
-            open--;
-        }
-        end = match.value.index as number;
-        match = matches.next();
-    }
 
     try {
-        let vsData = parse(src.slice(start, end + 1));
+        // explanation on https://github.com/LinaTsukusu/youtube-chat/issues/80#issuecomment-1361011064
+        let vsData = extractClosetObject<any>(data.slice(data.indexOf('viewSelector')));
         continuation = (vsData.sortFilterSubMenuRenderer.subMenuItems as any[])
             .filter(v => !v.selected)[0].continuation.reloadContinuationData.continuation;
     } catch (_) {
@@ -88,7 +94,7 @@ export function getOptionsFromLivePage(data: string): FetchOptions & { liveId: s
     }
 
     return {
-        title,
+        details,
         liveId,
         apiKey,
         clientVersion,
@@ -297,4 +303,40 @@ function parseActionToChatItem(data: Action): ChatItem | null {
     }
 
     return null;
+}
+
+function extractVideoDetails(source: string): VideoDetails | undefined {
+    for (let index = source.indexOf('videoDetails'); index >= 0; index = source.indexOf('videoDetails')) {
+        source = source.slice(index + 12);
+        try {
+            let obj = extractClosetObject(source);
+            return VideoDetailsSchema.parse(obj);
+        } catch (_) {
+        }
+    }
+    return undefined;
+}
+
+function extractClosetObject<T extends object>(source: string): T {
+    const regex = /[{}]/g;
+    let matches = source.matchAll(regex);
+    let open = 1;
+    let match: IteratorResult<RegExpMatchArray, undefined> = matches.next();
+    if (match.done || match.value[0] !== '{') {
+        throw new Error("Failed to extract fetch options");
+    }
+    let start = match.value.index as number;
+    let end = start;
+    match = matches.next();
+    while (!match.done && open > 0) {
+        if (match.value[0] === '{') {
+            open++;
+        } else {
+            open--;
+        }
+        end = match.value.index as number;
+        match = matches.next();
+    }
+
+    return parse(source.slice(start, end + 1));
 }

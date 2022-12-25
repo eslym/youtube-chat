@@ -195,3 +195,28 @@ export interface FetchOptions {
     clientVersion: string
     continuation: string
 }
+
+export interface VideoDetails {
+    videoId: string;
+    title: string;
+    lengthSeconds: string;
+    isLive: boolean;
+    keywords: string[];
+    channelId: string;
+    isOwnerViewing: boolean;
+    shortDescription: string;
+    isCrawlable: boolean;
+    isLiveDvrEnabled: boolean;
+    thumbnail: {
+        thumbnails: Thumbnail[];
+    };
+    liveChunkReadahead: number;
+    allowRatings: boolean;
+    viewCount: string;
+    author: string;
+    isLowLatencyLiveStream: boolean;
+    isPrivate: boolean;
+    isUnpluggedCorpus: boolean;
+    latencyClass: string;
+    isLiveContent: boolean;
+}

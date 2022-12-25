@@ -1,12 +1,12 @@
 import {EventEmitter} from "events"
 import TypedEmitter from "typed-emitter"
 import {ChatItem, YoutubeId} from "./types/data"
-import {FetchOptions} from "./types/yt-response"
+import {FetchOptions, VideoDetails} from "./types/yt-response"
 import {fetchChat, fetchLivePage} from "./requests"
 import {AxiosError} from "axios";
 
 type LiveChatEvents = {
-    start: (liveId: string, title: string) => void
+    start: (liveId: string, details?: VideoDetails) => void
     end: (reason?: string) => void
     chat: (chatItem: ChatItem) => void
     error: (err: Error | unknown) => void
@@ -46,7 +46,7 @@ export class LiveChat extends (EventEmitter as new () => TypedEmitter<LiveChatEv
 
             this.#observer = setTimeout(() => this.#execute(), this.#interval)
 
-            this.emit("start", this.liveId, options.title);
+            this.emit("start", this.liveId, options.details);
             return true
         } catch (err) {
             this.emit("error", err)
